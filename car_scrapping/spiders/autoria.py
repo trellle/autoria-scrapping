@@ -2,8 +2,10 @@ import scrapy
 from scrapy.http.response import Response
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.action_chains import ActionChains
 from selenium.common.exceptions import WebDriverException
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
 
 
 class Browser():
@@ -29,10 +31,17 @@ class AutoriaSpider(scrapy.Spider):
     
     def parse_number(self, browser: Browser, link: str):
         browser.driver.get(link)
+        wait = WebDriverWait(browser.driver, 15)
+        consent_button = wait.until(EC.element_to_be_clickable((By.CLASS_NAME, "fc-cta-do-nolgneot-consent")))
+        try:
+            consent_button = wait.until(EC.element_to_be_clickable((By.CLASS_NAME, "fc-cta-do-not-consent")))
+        except TimeoutException:
+            consent_button = None
+        if consent_button:
+            consent_button.click()
         button = browser.driver.find_element(By.CLASS_NAME, "conversion")
-        actions = ActionChains(browser.driver)
-        actions.click(button)
-        return browser.driver.find_element(By.CLASS_NAME, ".popup-body .conversion .common-text").text
+        button.click()
+        return wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ".popup-body a .common-text"))).text
     
     def parse_detail_page(self, response: Response):
         title_elems = response.css("#sideTitleTitle .common-text::text").get()
@@ -66,7 +75,7 @@ class AutoriaSpider(scrapy.Spider):
             "watt_power": float(engine[-1].split(" ")[3]) if engine and len(engine) >= 2 and "(" in engine[-1] else None,
             "address": response.css("#basicInfoTableMainInfoGeo span::text").get(),
             "tags": response.css("#badges .badge-template span::text").getall(),
-            "number": car_number if car_number else None,
+            "car_number": car_number if car_number else None,
             "win_code": response.css("#badgesVinGrid .common-text::text").get(),
             "description": description.translate(str.maketrans("\n\t", "  ", "")) if description else None,
             "body_type": params[0].strip(" ") if params else None,
@@ -74,7 +83,7 @@ class AutoriaSpider(scrapy.Spider):
             "seats": int(params[-1].split(" ")[0]) if params and len(params) > 2 and "місць" in params else None,
             "generation": response.css("#descGenerationBaseValue .common-text::text").get(),
             "drive": response.css("#descDriveTypeDriveType .common-text::text").get(),
-            "condition": self.split_str(response.css("#descStateValue .common-text::text").get(), " •\xa0\xa0"),
+            "condition": response.css("#descStateValue .common-text::text").get(),
             "security": self.split_str(response.css("#descSecurityValue .common-text::text").get(), " •\xa0\xa0"),
             "features": self.split_str(response.css("#descComfortValue .common-text::text").get(), " •\xa0\xa0"),
             "headlights": response.css("#descHeadlightsValue .common-text::text").get(),
