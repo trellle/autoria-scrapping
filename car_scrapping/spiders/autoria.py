@@ -5,7 +5,6 @@ from selenium.webdriver.common.by import By
 from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException
 
 
 class Browser():
@@ -17,6 +16,9 @@ class Browser():
             return webdriver.Firefox()
         except WebDriverException:
             return webdriver.Chrome()
+    
+    def __del__(self):
+        self.driver.quit()
 
 
 class AutoriaSpider(scrapy.Spider):
@@ -32,10 +34,9 @@ class AutoriaSpider(scrapy.Spider):
     def parse_number(self, browser: Browser, link: str):
         browser.driver.get(link)
         wait = WebDriverWait(browser.driver, 15)
-        consent_button = wait.until(EC.element_to_be_clickable((By.CLASS_NAME, "fc-cta-do-nolgneot-consent")))
         try:
             consent_button = wait.until(EC.element_to_be_clickable((By.CLASS_NAME, "fc-cta-do-not-consent")))
-        except TimeoutException:
+        except WebDriverException:
             consent_button = None
         if consent_button:
             consent_button.click()
@@ -126,4 +127,3 @@ class AutoriaSpider(scrapy.Spider):
         next_page = response.css(".next a::attr(href)").get()
         if next_page:
             yield scrapy.Request(next_page, callback=self.parse)
-        browser.driver.quit()
