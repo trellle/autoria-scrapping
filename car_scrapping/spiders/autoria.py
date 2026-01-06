@@ -31,7 +31,8 @@ class AutoriaSpider(scrapy.Spider):
         if raw_str:
             return raw_str.split(splitter)
     
-    def parse_number(self, browser: Browser, link: str):
+    def parse_number(self, link: str):
+        browser = Browser()
         browser.driver.get(link)
         wait = WebDriverWait(browser.driver, 15)
         try:
@@ -42,7 +43,7 @@ class AutoriaSpider(scrapy.Spider):
             consent_button.click()
         button = browser.driver.find_element(By.CLASS_NAME, "conversion")
         button.click()
-        return wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ".popup-body a .common-text"))).text
+        return wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, ".popup-body .conversion .common-text"))).text
     
     def parse_detail_page(self, response: Response):
         title_elems = response.css("#sideTitleTitle .common-text::text").get()
@@ -109,20 +110,17 @@ class AutoriaSpider(scrapy.Spider):
             "images_count": int(response.css(".common-badge.alpha span:nth-child(2)::text").get()),
             "image_urls": response.css("#photoSlider .picture img::attr(data-src)").getall()
         }
-        data["phone_number"] = self.parse_number(response.meta["browser"], response.meta["details_url"])
+        data["phone_number"] = self.parse_number(response.meta["details_url"])
         yield data
 
     def parse(self, response: Response):
-        browser = Browser()
+        
         for car in response.css(".ticket-item"):
             details_url = car.css(".ticket-title a::attr(href)").get()
             yield scrapy.Request(
                 details_url,
                 callback=self.parse_detail_page,
-                meta={
-                    "details_url": details_url,
-                    "browser": browser
-                }
+                meta={"details_url": details_url}
             )
         next_page = response.css(".next a::attr(href)").get()
         if next_page:
