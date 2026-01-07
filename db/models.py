@@ -1,4 +1,5 @@
 import enum
+from base import Base
 from sqlalchemy import (
     UniqueConstraint,
     String,
@@ -11,16 +12,11 @@ from sqlalchemy import (
     Column
 )
 from sqlalchemy.orm import (
-    DeclarativeBase,
     Mapped,
     mapped_column,
     validates,
     relationship
 )
-
-
-class Base(DeclarativeBase):
-    pass
 
 
 class GearboxEnum(str, enum.Enum):
@@ -70,17 +66,26 @@ class Seller(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     username: Mapped[str] = mapped_column(String, nullable=False)
     phone_number: Mapped[str] = mapped_column(String, nullable=False)
-    cars: Mapped["CarModel"] = relationship("CarModel", back_populates="seller")
+    cars: Mapped["Car"] = relationship("Car", back_populates="seller")
 
 
 cars_tags = Table(
     "cars_tags",
     Base.metadata,
-    Column()
+    Column(
+        "car_id",
+        ForeignKey("cars.id", ondelete="CASCADE"),
+        primary_key=True
+    ),
+    Column(
+        "tag_id",
+        ForeignKey("tags.id", ondelete="CASCADE"),
+        primary_key=True
+    )
 )
 
 
-class CarModel(Base):
+class Car(Base):
     __tablename__ = "cars"
     __table_args__ = (
         UniqueConstraint(
@@ -105,7 +110,7 @@ class CarModel(Base):
     horse_power: Mapped[DECIMAL] = mapped_column(DECIMAL(5, 2), nullable=True)
     watt_power: Mapped[DECIMAL] = mapped_column(DECIMAL(10, 3), nullable=True)
     address: Mapped[str] = mapped_column(String, nullable=False)
-    tags: Mapped["Tag"] = relationship("Tag", back_populate="cars")
+    tags: Mapped[list["Tag"]] = relationship("Tag", secondary=cars_tags, back_populate="cars")
     car_number: Mapped[str] = mapped_column(String, nullable=True)
     win_code: Mapped[str] = mapped_column(String, nullable=True)
     description: Mapped[Text] = mapped_column(Text, nullable=True)
@@ -134,4 +139,8 @@ class Tag(Base):
     )
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
-    cars: Mapped["CarModel"] = relationship("CarModel", back_populate="tags")
+    cars: Mapped[list["Car"]] = relationship("Car", secondary=cars_tags, back_populate="tags")
+
+
+class Security(Base):
+    __tablename__ = "securities"
