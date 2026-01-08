@@ -1,3 +1,4 @@
+import os
 import scrapy
 from scrapy.http.response import Response
 from selenium import webdriver
@@ -34,7 +35,7 @@ class AutoriaSpider(scrapy.Spider):
     def parse_number(self, link: str):
         browser = Browser()
         browser.driver.get(link)
-        wait = WebDriverWait(browser.driver, 15)
+        wait = WebDriverWait(browser.driver, os.environ("PAGE_LOADING_DELAY"))
         try:
             consent_button = wait.until(EC.element_to_be_clickable((By.CLASS_NAME, "fc-cta-do-not-consent")))
         except WebDriverException:

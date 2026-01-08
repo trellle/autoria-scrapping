@@ -140,7 +140,3 @@ class Tag(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
     cars: Mapped[list["Car"]] = relationship("Car", secondary=cars_tags, back_populate="tags")
-
-
-class Security(Base):
-    __tablename__ = "securities"
