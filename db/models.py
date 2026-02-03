@@ -56,6 +56,29 @@ class ConditionEnum(str, enum.Enum):
     broken = "Не на ходу / На запчастини"
 
 
+class TypeEnum(str, enum.Enum):
+    security = "Безпека"
+    features = "Комфорт"
+    headlights = "Фари"
+    optics = "Оптика"
+    conditioner = "Кондиціонер"
+    parktronic = "Система допомоги при паркуванні"
+    multimedia = "Мультимедіа"
+    steering_adjustment = "Регулювання керма"
+    power_steering = "Підсилювач керма"
+    extra_wheel = "Запасне колесо"
+    paint_rate = "Лакофарбове покриття"
+    interior = "Салон та кузов"
+    seats_adjustment = "Регулювання сидінь салону по висоті"
+    seats_memory = "Пам'ять положення сидіння"
+    seats_heat = "Підігрів сидінь"
+    interior_material = "Матеріали салону"
+    interior_color = "Колір"
+    airbags = "Подушка безпеки"
+    window_lifters = "Електросклопідйомники"
+    other_equipment = "Додаткове обладнання"
+
+
 class Seller(Base):
     __tablename__ = "sellers"
     __table_args__ = (
@@ -69,8 +92,8 @@ class Seller(Base):
     cars: Mapped["Car"] = relationship("Car", back_populates="seller")
 
 
-cars_tags = Table(
-    "cars_tags",
+cars_attributes = Table(
+    "cars_attributes",
     Base.metadata,
     Column(
         "car_id",
@@ -78,8 +101,24 @@ cars_tags = Table(
         primary_key=True
     ),
     Column(
-        "tag_id",
-        ForeignKey("tags.id", ondelete="CASCADE"),
+        "attribute_id",
+        ForeignKey("attributes.id", ondelete="CASCADE"),
+        primary_key=True
+    )
+)
+
+
+cars_security = Table(
+    "cars_security",
+    Base.metadata,
+    Column(
+        "car_id",
+        ForeignKey("cars.id", ondelete="CASCADE"),
+        primary_key=True
+    ),
+    Column(
+        "security_id",
+        ForeignKey("security.id", ondelete="CASCADE"),
         primary_key=True
     )
 )
@@ -110,7 +149,6 @@ class Car(Base):
     horse_power: Mapped[DECIMAL] = mapped_column(DECIMAL(5, 2), nullable=True)
     watt_power: Mapped[DECIMAL] = mapped_column(DECIMAL(10, 3), nullable=True)
     address: Mapped[str] = mapped_column(String, nullable=False)
-    tags: Mapped[list["Tag"]] = relationship("Tag", secondary=cars_tags, back_populate="cars")
     car_number: Mapped[str] = mapped_column(String, nullable=True)
     win_code: Mapped[str] = mapped_column(String, nullable=True)
     description: Mapped[Text] = mapped_column(Text, nullable=True)
@@ -120,6 +158,7 @@ class Car(Base):
     generation: Mapped[str] = mapped_column(String, nullable=True)
     drive: Mapped["DriveEnum"] = mapped_column(Enum(DriveEnum), nullable=False)
     condition: Mapped["ConditionEnum"] = mapped_column(Enum(ConditionEnum), nullable=False)
+    attributes: Mapped[list["Attribute"]] = relationship("Attribute", secondary=cars_attributes, back_populate="cars")
     seller: Mapped["Seller"] = relationship("Seller", back_populates="cars", uselist=False)
     seller_id: Mapped[int] = mapped_column(ForeignKey("sellers.id"), unique=True)
 
@@ -130,8 +169,8 @@ class Car(Base):
         return value
 
 
-class Tag(Base):
-    __tablename__ = "tags"
+class Attribute(Base):
+    __tablename__ = "attributes"
     __table_args__ = (
         UniqueConstraint(
             "name", name="unique_name"
@@ -139,4 +178,4 @@ class Tag(Base):
     )
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String, nullable=False)
-    cars: Mapped[list["Car"]] = relationship("Car", secondary=cars_tags, back_populate="tags")
+    type: Mapped[TypeEnum] = mapped_column(TypeEnum, nullable=False)

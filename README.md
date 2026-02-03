@@ -1,6 +1,9 @@
 # autoria-scrapping
-1. pull repository
-2. create venv: python -m venv venv
-3. ativate venv: source venv/Scripts/activate
-4. apply requirements: pip install -r requirements.txt
-5. start script: scrapy crawl autoria
+1. Install Docker Desktop
+2. In cmd: Install WSL: wsl --install or Update WSL: wsl --update
+2. pull repository in local folder: git pull repo_link
+3. build docker: docker build -t aurtoria:latest .
+4. docker-compose up --build
+In order to stop:
+1. docker-compose down -v
+2. docker volume rm postgres_data
